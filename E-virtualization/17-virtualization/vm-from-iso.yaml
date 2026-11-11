@@ -1,0 +1,57 @@
+# VM to install from ISO: CD-ROM (ISO) + blank install disk
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: alpine-from-iso
+  namespace: ocp-poc-virt
+spec:
+  runStrategy: Always
+  dataVolumeTemplates:
+    - metadata:
+        name: alpine-from-iso-rootdisk
+      spec:
+        source:
+          blank: {}                      # blank disk — the OS will be installed here from the ISO
+        storage:
+          storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+          accessModes: [ReadWriteMany]   # RWX for live migration
+          volumeMode: Block
+          resources:
+            requests:
+              storage: 5Gi
+  template:
+    metadata:
+      labels:
+        app: alpine-from-iso
+    spec:
+      domain:
+        cpu:
+          cores: 1
+        memory:
+          guest: 1Gi
+        firmware:
+          bootloader:
+            bios: {}
+        devices:
+          disks:
+            - name: rootdisk
+              bootOrder: 2               # boots from here after the install
+              disk:
+                bus: virtio
+            - name: installation-cdrom
+              bootOrder: 1               # boots from the ISO on first start
+              cdrom:
+                bus: sata
+          interfaces:
+            - name: default
+              masquerade: {}
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: alpine-from-iso-rootdisk
+        - name: installation-cdrom
+          persistentVolumeClaim:
+            claimName: alpine-iso         # the ISO uploaded with virtctl image-upload / Console upload

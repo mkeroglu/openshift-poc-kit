@@ -1,0 +1,8 @@
+# Does the same as: virtctl migrate fedora-from-template
+apiVersion: kubevirt.io/v1
+kind: VirtualMachineInstanceMigration
+metadata:
+  name: fedora-from-template-migration
+  namespace: ocp-poc-virt
+spec:
+  vmiName: fedora-from-template

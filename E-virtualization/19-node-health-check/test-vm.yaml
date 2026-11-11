@@ -1,0 +1,23 @@
+# VM expected to restart on another node when its node is lost (runStrategy: Always, RWX disk)
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: ha-test-vm
+  namespace: poc-ha-demo
+spec:
+  runStrategy: Always
+  instancetype: {kind: VirtualMachineClusterInstancetype, name: u1.small}
+  preference: {kind: VirtualMachineClusterPreference, name: fedora}
+  dataVolumeTemplates:
+    - metadata: {name: ha-test-vm-rootdisk}
+      spec:
+        sourceRef: {kind: DataSource, name: fedora, namespace: openshift-virtualization-os-images}
+        storage:
+          storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+          resources: {requests: {storage: 30Gi}}
+  template:
+    spec:
+      domain: {devices: {}}
+      volumes:
+        - name: rootdisk
+          dataVolume: {name: ha-test-vm-rootdisk}

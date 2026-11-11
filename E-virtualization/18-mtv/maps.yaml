@@ -1,0 +1,31 @@
+# OpenShift counterparts of the source (VMware / OVA) networks and disks.
+# The IDs come from the MTV inventory (README section 3).
+apiVersion: forklift.konveyor.io/v1beta1
+kind: NetworkMap
+metadata:
+  name: poc-ova-network-map
+  namespace: openshift-mtv
+spec:
+  provider:
+    source:      {name: REPLACE_ME_SOURCE_PROVIDER, namespace: openshift-mtv}
+    destination: {name: host, namespace: openshift-mtv}
+  map:
+    - source:
+        id: REPLACE_ME_SOURCE_NETWORK_ID      # e.g. "VM Network"
+      destination:
+        type: pod                              # pod network; for the LAN: type: multus, name: <ns>/<nad>
+---
+apiVersion: forklift.konveyor.io/v1beta1
+kind: StorageMap
+metadata:
+  name: poc-ova-storage-map
+  namespace: openshift-mtv
+spec:
+  provider:
+    source:      {name: REPLACE_ME_SOURCE_PROVIDER, namespace: openshift-mtv}
+    destination: {name: host, namespace: openshift-mtv}
+  map:
+    - source:
+        id: REPLACE_ME_SOURCE_STORAGE_ID       # a datastore on vSphere, a disk file on OVA
+      destination:
+        storageClass: ocs-storagecluster-ceph-rbd-virtualization

@@ -1,0 +1,44 @@
+# microseg-policies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: poc-microseg-demo
+spec:
+  podSelector: {}          # ALL pods in the namespace
+  policyTypes: [Ingress]
+  # no ingress rule -> no traffic allowed (default deny)
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-to-backend
+  namespace: poc-microseg-demo
+spec:
+  podSelector:
+    matchLabels: { tier: backend }     # this rule protects ONLY backend pods
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { tier: frontend }   # ONLY from frontend
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-database
+  namespace: poc-microseg-demo
+spec:
+  podSelector:
+    matchLabels: { tier: database }    # this rule protects ONLY database pods
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { tier: backend }    # ONLY from backend
+      ports:
+        - protocol: TCP
+          port: 8080

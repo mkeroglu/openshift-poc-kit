@@ -1,0 +1,18 @@
+# FOR REFERENCE ONLY: "configs.imageregistry.operator.openshift.io/cluster" is a cluster-wide
+# SINGLETON resource that already exists. Applying this file directly with "oc apply -f"
+# overwrites the cluster's EXISTING registry configuration and affects every namespace.
+# Always check the current state before applying:
+#   oc get configs.imageregistry.operator.openshift.io cluster -o yaml
+# To make changes, prefer small, targeted "oc patch" commands (see the README).
+apiVersion: imageregistry.operator.openshift.io/v1
+kind: Config
+metadata:
+  name: cluster
+spec:
+  managementState: Managed
+  defaultRoute: true
+  replicas: 1
+  rolloutStrategy: RollingUpdate
+  storage:
+    pvc:
+      claim: ""   # if left empty, the operator creates a PVC from the default StorageClass

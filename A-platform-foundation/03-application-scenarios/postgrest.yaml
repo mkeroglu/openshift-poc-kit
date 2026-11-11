@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgrest-config
+  namespace: ocp-poc
+  labels:
+    app: postgrest
+data:
+  PGRST_DB_SCHEMA: public
+  PGRST_DB_ANON_ROLE: appuser
+  PGRST_SERVER_PORT: "3000"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgrest-db-uri
+  namespace: ocp-poc
+  labels:
+    app: postgrest
+type: Opaque
+stringData:
+  PGRST_DB_URI: postgres://appuser:app-pass-2026@postgres.ocp-poc.svc.cluster.local:5432/appdb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgrest
+  namespace: ocp-poc
+  labels:
+    app: postgrest
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: postgrest
+  template:
+    metadata:
+      labels:
+        app: postgrest
+    spec:
+      containers:
+        - name: postgrest
+          image: postgrest/postgrest:v12.2.0
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: postgrest-config
+            - secretRef:
+                name: postgrest-db-uri
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgrest
+  namespace: ocp-poc
+  labels:
+    app: postgrest
+spec:
+  selector:
+    app: postgrest
+  ports:
+    - name: http
+      port: 3000
+      targetPort: 3000
+      protocol: TCP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: postgrest
+  namespace: ocp-poc
+  labels:
+    app: postgrest
+spec:
+  to:
+    kind: Service
+    name: postgrest
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None

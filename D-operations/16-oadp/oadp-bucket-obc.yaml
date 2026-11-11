@@ -1,0 +1,9 @@
+# oadp-bucket-obc.yaml
+apiVersion: objectbucket.io/v1alpha1
+kind: ObjectBucketClaim
+metadata:
+  name: oadp-bucket-odf
+  namespace: openshift-adp
+spec:
+  generateBucketName: oadp-bucket-odf
+  storageClassName: ocs-storagecluster-ceph-rgw

@@ -1,0 +1,44 @@
+# clusterlogforwarder.yaml
+apiVersion: observability.openshift.io/v1
+kind: ClusterLogForwarder
+metadata:
+  name: collector
+  namespace: openshift-logging
+spec:
+  serviceAccount:
+    name: collector
+  collector:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        memory: 4Gi          # see section 7 — the default limit caused OOMKilled on this cluster
+  inputs:
+    - name: app-logs
+      type: application
+      application: {}        # ALL namespaces — production use; narrowed in the POC test, see section 7
+    - name: audit-logs
+      type: audit
+      audit: {}
+  outputs:
+    - name: loki-output
+      type: lokiStack
+      lokiStack:
+        target:
+          name: logging-loki
+          namespace: openshift-logging
+        authentication:
+          token:
+            from: serviceAccount
+      tls:
+        ca:
+          key: service-ca.crt
+          configMapName: openshift-service-ca.crt
+  pipelines:
+    - name: app-and-audit-to-loki
+      inputRefs:
+        - app-logs
+        - audit-logs
+      outputRefs:
+        - loki-output

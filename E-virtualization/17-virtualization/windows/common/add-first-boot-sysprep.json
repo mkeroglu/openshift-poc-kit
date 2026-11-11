@@ -1,0 +1,4 @@
+[
+  {"op": "add", "path": "/spec/template/spec/domain/devices/disks/-", "value": {"name": "sysprep", "cdrom": {"bus": "sata"}}},
+  {"op": "add", "path": "/spec/template/spec/volumes/-", "value": {"name": "sysprep", "sysprep": {"configMap": {"name": "poc-windows-first-boot"}}}}
+]

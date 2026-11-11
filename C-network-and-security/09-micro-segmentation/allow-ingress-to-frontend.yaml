@@ -1,0 +1,20 @@
+# allow-ingress-to-frontend.yaml
+# Allows external traffic coming through a Route (OpenShift router / ingress controller) to reach ONLY the frontend.
+# If default-deny-ingress is applied alone, traffic from the Route is cut too.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-frontend
+  namespace: poc-microseg-demo
+spec:
+  podSelector:
+    matchLabels: { tier: frontend }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              policy-group.network.openshift.io/ingress: ""   # the namespace where the router pods run
+      ports:
+        - protocol: TCP
+          port: 8080

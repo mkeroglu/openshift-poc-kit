@@ -1,0 +1,58 @@
+# FIRST-BOOT settings for Windows VMs created from the golden image (sysprep /generalize /oobe).
+# Attached to the VM as a "sysprep" volume; Windows reads this unattend.xml during OOBE and skips the screens.
+#   - Computer name: random (*)          - Local Administrator password (PocDemo2026x — for the POC; use a Secret/parameter in production)
+#   - Time zone: Turkey (change to yours) - RDP is enabled (including the firewall rule)
+# Console equivalent: when creating the VM, Customize -> Scripts -> Sysprep -> the "unattend.xml" field.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: poc-windows-first-boot
+  namespace: ocp-poc-win
+data:
+  unattend.xml: |
+    <?xml version="1.0" encoding="utf-8"?>
+    <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <settings pass="specialize">
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <ComputerName>*</ComputerName>
+          <TimeZone>Turkey Standard Time</TimeZone>
+        </component>
+        <component name="Microsoft-Windows-TerminalServices-LocalSessionManager" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <fDenyTSConnections>false</fDenyTSConnections>
+        </component>
+        <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <RunSynchronous>
+            <!-- RDP firewall rules. Note: FirewallGroups/<Group>Remote Desktop</Group> had NO EFFECT on Server 2022 (live test) -->
+            <RunSynchronousCommand wcm:action="add">
+              <Order>1</Order>
+              <Path>netsh advfirewall firewall set rule group="remote desktop" new enable=Yes</Path>
+              <Description>Enable RDP firewall rules</Description>
+            </RunSynchronousCommand>
+          </RunSynchronous>
+        </component>
+      </settings>
+      <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <InputLocale>0409:00000409</InputLocale>   <!-- keyboard en-US: VNC/Console sends keys in the US layout -->
+          <SystemLocale>tr-TR</SystemLocale>
+          <UILanguage>en-US</UILanguage>
+          <UserLocale>tr-TR</UserLocale>
+        </component>
+        <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <OOBE>
+            <HideEULAPage>true</HideEULAPage>
+            <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+            <HideWirelessSetupInOOBE>true</HideWirelessSetupInOOBE>
+            <ProtectYourPC>3</ProtectYourPC>
+            <SkipMachineOOBE>true</SkipMachineOOBE>
+            <SkipUserOOBE>true</SkipUserOOBE>
+          </OOBE>
+          <UserAccounts>
+            <AdministratorPassword>
+              <Value>PocDemo2026x</Value>
+              <PlainText>true</PlainText>
+            </AdministratorPassword>
+          </UserAccounts>
+        </component>
+      </settings>
+    </unattend>

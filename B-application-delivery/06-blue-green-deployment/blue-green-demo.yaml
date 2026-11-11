@@ -1,0 +1,84 @@
+# blue-green-demo.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poc-bg-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-blue
+  namespace: poc-bg-demo
+  labels:
+    app: demo-app
+    version: blue
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-app
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: demo-app
+        version: blue
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /tmp/www && echo BLUE > /tmp/www/index.html && httpd -f -p 8080 -h /tmp/www"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-green
+  namespace: poc-bg-demo
+  labels:
+    app: demo-app
+    version: green
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-app
+      version: green
+  template:
+    metadata:
+      labels:
+        app: demo-app
+        version: green
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /tmp/www && echo GREEN > /tmp/www/index.html && httpd -f -p 8080 -h /tmp/www"]
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: demo-app
+  namespace: poc-bg-demo
+spec:
+  selector:
+    app: demo-app
+    version: blue        # <-- the ONLY field that routes traffic; the Blue/Green switch is changing this
+  ports:
+    - port: 8080
+      targetPort: 8080
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: demo-app
+  namespace: poc-bg-demo
+spec:
+  to:
+    kind: Service
+    name: demo-app
+  port:
+    targetPort: 8080

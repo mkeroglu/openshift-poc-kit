@@ -1,0 +1,28 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: build-and-deploy-run-
+spec:
+  pipelineRef:
+    name: build-and-deploy
+  params:
+    - name: git-url
+      value: https://github.com/openshift/pipelines-vote-api.git
+    - name: git-revision
+      value: master
+    - name: context-dir
+      value: "."
+    - name: image
+      value: image-registry.openshift-image-registry.svc:5000/REPLACE_ME_NAMESPACE/pipelines-demo:latest
+    - name: deployment-name
+      value: pipelines-demo
+  workspaces:
+    - name: shared-workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 1Gi
+  taskRunTemplate:
+    serviceAccountName: pipeline

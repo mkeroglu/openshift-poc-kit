@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ocp-poc-virt
+  labels:
+    app.kubernetes.io/part-of: ocp-poc
+  annotations:
+    openshift.io/display-name: "OCP POC - Virtualization"
+    openshift.io/description: "Namespace/project for the OpenShift Virtualization POC"

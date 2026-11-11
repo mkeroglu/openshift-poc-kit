@@ -1,0 +1,11 @@
+# backup.yaml
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: poc-oadp-demo-backup
+  namespace: openshift-adp
+spec:
+  includedNamespaces:
+    - poc-oadp-demo
+  storageLocation: dpa-odf-1
+  ttl: 720h0m0s

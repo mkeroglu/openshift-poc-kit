@@ -1,0 +1,168 @@
+# POC-specific template derived from the fedora-server-small template in the openshift namespace
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  annotations:
+    defaults.template.kubevirt.io/disk: rootdisk
+    description: 'Fedora template customized for the POC: SSH key secret parameter,
+      ODF virtualization storage class.'
+    iconClass: icon-fedora
+    name.os.template.kubevirt.io/fedora43: Fedora Linux 43 or higher
+    openshift.io/display-name: POC Fedora Small (SSH key + ODF virt)
+    openshift.io/documentation-url: https://github.com/kubevirt/common-templates
+    openshift.io/provider-display-name: Red Hat
+    openshift.io/support-url: https://github.com/kubevirt/common-templates/issues
+    openshift.kubevirt.io/pronounceable-suffix-for-name-expression: 'true'
+    tags: hidden,kubevirt,virtualmachine,fedora
+    template.kubevirt.io/containerdisks: 'quay.io/containerdisks/fedora:latest
+
+      quay.io/containerdisks/fedora:43
+
+      '
+    template.kubevirt.io/editable: '/objects[0].spec.template.spec.domain.cpu.sockets
+
+      /objects[0].spec.template.spec.domain.cpu.cores
+
+      /objects[0].spec.template.spec.domain.cpu.threads
+
+      /objects[0].spec.template.spec.domain.memory.guest
+
+      /objects[0].spec.template.spec.domain.devices.disks
+
+      /objects[0].spec.template.spec.volumes
+
+      /objects[0].spec.template.spec.networks
+
+      '
+    template.kubevirt.io/images: 'https://download.fedoraproject.org/pub/fedora/linux/releases/43/Cloud/x86_64/images/Fedora-Cloud-Base-Generic-43-1.6.x86_64.qcow2
+
+      '
+    template.kubevirt.io/provider: Red Hat
+    template.kubevirt.io/provider-support-level: Community
+    template.kubevirt.io/provider-url: https://www.fedoraproject.org
+    template.kubevirt.io/version: v1alpha1
+    template.openshift.io/bindable: 'false'
+  labels:
+    flavor.template.kubevirt.io/small: 'true'
+    os.template.kubevirt.io/fedora43: 'true'
+    template.kubevirt.io/architecture: amd64
+    template.kubevirt.io/default-os-variant: 'true'
+    template.kubevirt.io/type: vm
+    template.kubevirt.io/version: v0.35.0
+    workload.template.kubevirt.io/server: 'true'
+  name: poc-fedora-small
+  namespace: ocp-poc-virt
+objects:
+- apiVersion: kubevirt.io/v1
+  kind: VirtualMachine
+  metadata:
+    annotations:
+      vm.kubevirt.io/validations: "[\n  {\n    \"name\": \"minimal-required-memory\"\
+        ,\n    \"path\": \"jsonpath::.spec.domain.memory.guest\",\n    \"rule\": \"\
+        integer\",\n    \"message\": \"This VM requires more memory.\",\n    \"min\"\
+        : 2147483648\n  }\n]\n"
+    labels:
+      app: ${NAME}
+      kubevirt.io/dynamic-credentials-support: 'true'
+      vm.kubevirt.io/template: fedora-server-small
+      vm.kubevirt.io/template.revision: '1'
+      vm.kubevirt.io/template.version: v0.35.0
+      app.kubernetes.io/part-of: ocp-poc
+    name: ${NAME}
+  spec:
+    dataVolumeTemplates:
+    - apiVersion: cdi.kubevirt.io/v1beta1
+      kind: DataVolume
+      metadata:
+        name: ${NAME}
+      spec:
+        sourceRef:
+          kind: DataSource
+          name: ${DATA_SOURCE_NAME}
+          namespace: ${DATA_SOURCE_NAMESPACE}
+        storage:
+          resources:
+            requests:
+              storage: 30Gi
+          storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+    runStrategy: Halted
+    template:
+      metadata:
+        annotations:
+          vm.kubevirt.io/flavor: small
+          vm.kubevirt.io/os: fedora
+          vm.kubevirt.io/workload: server
+        labels:
+          kubevirt.io/domain: ${NAME}
+          kubevirt.io/size: small
+      spec:
+        architecture: amd64
+        domain:
+          cpu:
+            cores: 1
+            sockets: 1
+            threads: 1
+          devices:
+            disks:
+            - disk:
+                bus: virtio
+              name: rootdisk
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+            interfaces:
+            - masquerade: {}
+              model: virtio
+              name: default
+            rng: {}
+          features:
+            smm:
+              enabled: true
+          firmware:
+            bootloader:
+              efi: {}
+          memory:
+            guest: 2Gi
+        networks:
+        - name: default
+          pod: {}
+        terminationGracePeriodSeconds: 180
+        volumes:
+        - dataVolume:
+            name: ${NAME}
+          name: rootdisk
+        - cloudInitNoCloud:
+            userData: '#cloud-config
+
+              user: fedora
+
+              password: ${CLOUD_USER_PASSWORD}
+
+              chpasswd: { expire: False }'
+          name: cloudinitdisk
+        accessCredentials:
+        - sshPublicKey:
+            source:
+              secret:
+                secretName: ${SSH_KEY_SECRET}
+            propagationMethod:
+              noCloud: {}
+parameters:
+- description: VM name
+  from: fedora-[a-z0-9]{16}
+  generate: expression
+  name: NAME
+- description: Name of the DataSource to clone
+  name: DATA_SOURCE_NAME
+  value: fedora
+- description: Namespace of the DataSource
+  name: DATA_SOURCE_NAMESPACE
+  value: openshift-virtualization-os-images
+- description: Randomized password for the cloud-init user fedora
+  from: '[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}'
+  generate: expression
+  name: CLOUD_USER_PASSWORD
+- name: SSH_KEY_SECRET
+  description: Name of the SSH public key secret to inject into the VM
+  value: vm-ssh-key
+  required: true

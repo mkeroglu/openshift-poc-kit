@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pipelines-demo
+  labels:
+    app: pipelines-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pipelines-demo
+  template:
+    metadata:
+      labels:
+        app: pipelines-demo
+    spec:
+      containers:
+        - name: app
+          # Same pull spec as the image the pipeline will push — until the first
+          # pipeline run this image does not exist, so the pod waits in
+          # ImagePullBackOff; this is normal.
+          image: image-registry.openshift-image-registry.svc:5000/REPLACE_ME_NAMESPACE/pipelines-demo:latest
+          imagePullPolicy: Always   # required because the "latest" tag changes on every build
+          ports:
+            - name: http
+              containerPort: 9000
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pipelines-demo
+  labels:
+    app: pipelines-demo
+spec:
+  selector:
+    app: pipelines-demo
+  ports:
+    - name: http
+      port: 9000
+      targetPort: 9000
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: pipelines-demo
+  labels:
+    app: pipelines-demo
+spec:
+  to:
+    kind: Service
+    name: pipelines-demo
+  port:
+    targetPort: http

@@ -1,0 +1,65 @@
+# Temporary VM that installs Windows Server 2022 from ISO.
+#   installcdrom        : the Windows ISO uploaded with virtctl image-upload / Console (win2k22-iso-upload)
+#   rootdisk            : 60Gi blank disk -> Windows is installed here, then it becomes the golden image
+#   virtiocontainerdisk : Red Hat virtio-win drivers (the image in the openshift-cnv/virtio-win ConfigMap) -> E:\
+#   sysprep             : autounattend.xml + post-install.ps1 (unattended install) -> F:\
+# For a manual install, remove the sysprep volume and install from the VNC console.
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: win2k22-installer
+  namespace: ocp-poc-win
+spec:
+  runStrategy: RerunOnFailure        # sysprep shuts the VM down at the end of the install; the VM is not restarted
+  instancetype:
+    kind: VirtualMachineClusterInstancetype
+    name: u1.large                   # 2 vCPU / 8Gi
+  preference:
+    kind: VirtualMachineClusterPreference
+    name: windows.2k22.virtio        # EFI + SecureBoot + TPM, Hyper-V enlightenments, virtio bus
+  dataVolumeTemplates:
+    - metadata:
+        name: win2k22-installer-rootdisk
+      spec:
+        source:
+          blank: {}
+        storage:
+          storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+          accessModes: [ReadWriteMany]
+          volumeMode: Block
+          resources:
+            requests:
+              storage: 60Gi
+  template:
+    spec:
+      domain:
+        devices:
+          disks:
+            - name: installcdrom
+              bootOrder: 2
+              cdrom:
+                bus: sata
+            - name: rootdisk
+              bootOrder: 1           # skipped while blank -> boots from CD; boots from disk after the install
+              disk:
+                bus: virtio
+            - name: virtiocontainerdisk
+              cdrom:
+                bus: sata
+            - name: sysprep
+              cdrom:
+                bus: sata
+      volumes:
+        - name: installcdrom
+          persistentVolumeClaim:
+            claimName: win2k22-iso-upload
+        - name: rootdisk
+          dataVolume:
+            name: win2k22-installer-rootdisk
+        - name: virtiocontainerdisk
+          containerDisk:
+            image: registry.redhat.io/container-native-virtualization/virtio-win-rhel9@sha256:dbbba8ff8f5d38c7b736a1814f1a5788feae399fb079ba8a5f23c7070c533308
+        - name: sysprep
+          sysprep:
+            configMap:
+              name: poc-win2k22-autounattend

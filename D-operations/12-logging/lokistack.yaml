@@ -1,0 +1,23 @@
+# lokistack.yaml
+apiVersion: loki.grafana.com/v1
+kind: LokiStack
+metadata:
+  name: logging-loki
+  namespace: openshift-logging
+spec:
+  size: 1x.demo              # POC/demo size — see section 7 (may be too small for production)
+  storage:
+    schemas:
+      - version: v13
+        effectiveDate: "2024-01-01"
+    secret:
+      name: logging-loki-s3
+      type: s3
+  storageClassName: ocs-storagecluster-ceph-rbd   # RWO block storage for WAL/index
+  tenants:
+    mode: openshift-logging   # ready-made multi-tenant mode using OpenShift's own RBAC/auth
+  limits:
+    global:
+      ingestion:
+        ingestionRate: 40        # MB/s — the 1x.demo default is 4; audit logs alone exceed it
+        ingestionBurstSize: 60

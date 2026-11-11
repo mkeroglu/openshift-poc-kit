@@ -1,0 +1,31 @@
+# Rule that automatically "fences" unhealthy worker nodes (isolates and reboots them).
+# Once a node is fenced, its pods and VMs are restarted on other nodes.
+apiVersion: remediation.medik8s.io/v1alpha1
+kind: NodeHealthCheck
+metadata:
+  name: poc-worker-nhc
+spec:
+  selector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/worker
+        operator: Exists
+      - key: node-role.kubernetes.io/master          # the control plane is NEVER included in this rule
+        operator: DoesNotExist
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist
+      # To limit the blast radius to a single node pool during a test (optional):
+      # - key: REPLACE_ME_POOL_LABEL
+      #   operator: Exists
+  minHealthy: 51%          # do NOT intervene if more than half of the nodes are unhealthy (e.g. a network outage)
+  unhealthyConditions:
+    - type: Ready
+      status: "False"
+      duration: 300s
+    - type: Ready
+      status: Unknown
+      duration: 300s
+  remediationTemplate:
+    apiVersion: self-node-remediation.medik8s.io/v1alpha1
+    kind: SelfNodeRemediationTemplate
+    name: self-node-remediation-automatic-strategy-template
+    namespace: openshift-workload-availability

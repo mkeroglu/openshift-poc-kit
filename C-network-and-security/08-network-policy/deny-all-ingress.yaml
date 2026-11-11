@@ -1,0 +1,11 @@
+# deny-all-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: poc-np-backend
+spec:
+  podSelector: {}      # selects ALL pods in the namespace
+  policyTypes:
+    - Ingress
+  # no ingress rule is defined, so no traffic is allowed

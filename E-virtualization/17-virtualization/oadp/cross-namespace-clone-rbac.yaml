@@ -1,0 +1,24 @@
+# Permission to clone disks from a golden image (DataSource/PVC) in another namespace.
+# In the source namespace (ocp-poc-virt), clone permission is granted to the target namespace's ServiceAccount.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: poc-datavolume-cloner
+rules:
+  - apiGroups: ["cdi.kubevirt.io"]
+    resources: ["datavolumes/source"]
+    verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: allow-clone-to-ocp-poc-virt-backup
+  namespace: ocp-poc-virt            # SOURCE namespace (where the golden image is)
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: ocp-poc-virt-backup   # TARGET namespace
+roleRef:
+  kind: ClusterRole
+  name: poc-datavolume-cloner
+  apiGroup: rbac.authorization.k8s.io

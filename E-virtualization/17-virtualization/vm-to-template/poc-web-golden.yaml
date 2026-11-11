@@ -1,0 +1,124 @@
+# Generated from the poc-vm-from-custom-template VM with vm-to-template.sh
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: poc-web-golden
+  namespace: ocp-poc-virt
+  labels:
+    template.kubevirt.io/type: vm
+  annotations:
+    openshift.io/display-name: POC Web Server (httpd, golden)
+    description: 'Template generated from the poc-vm-from-custom-template VM (golden
+      image: DataSource ocp-poc-virt/poc-web-golden).'
+    iconClass: icon-fedora
+    openshift.io/provider-display-name: OpenShift POC Kit
+    template.kubevirt.io/provider: OpenShift POC Kit
+    tags: kubevirt,virtualmachine,linux
+objects:
+- apiVersion: kubevirt.io/v1
+  kind: VirtualMachine
+  metadata:
+    name: ${NAME}
+    labels:
+      app: ${NAME}
+      app.kubernetes.io/part-of: ocp-poc
+      kubevirt.io/dynamic-credentials-support: 'true'
+    annotations:
+      vm.kubevirt.io/validations: "[\n  {\n    \"name\": \"minimal-required-memory\"\
+        ,\n    \"path\": \"jsonpath::.spec.domain.memory.guest\",\n    \"rule\": \"\
+        integer\",\n    \"message\": \"This VM requires more memory.\",\n    \"min\"\
+        : 2147483648\n  }\n]\n"
+  spec:
+    dataVolumeTemplates:
+    - metadata:
+        name: ${NAME}
+      spec:
+        sourceRef:
+          kind: DataSource
+          name: poc-web-golden
+          namespace: ocp-poc-virt
+        storage:
+          storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+          resources:
+            requests:
+              storage: 30Gi
+    runStrategy: Always
+    template:
+      metadata:
+        labels:
+          kubevirt.io/domain: ${NAME}
+          kubevirt.io/size: small
+        annotations:
+          vm.kubevirt.io/flavor: small
+          vm.kubevirt.io/os: fedora
+          vm.kubevirt.io/workload: server
+      spec:
+        accessCredentials:
+        - sshPublicKey:
+            source:
+              secret:
+                secretName: ${SSH_KEY_SECRET}
+            propagationMethod:
+              noCloud: {}
+        architecture: amd64
+        domain:
+          cpu:
+            cores: 1
+            sockets: 1
+            threads: 1
+          devices:
+            disks:
+            - disk:
+                bus: virtio
+              name: rootdisk
+            - disk:
+                bus: virtio
+              name: cloudinitdisk
+            interfaces:
+            - masquerade: {}
+              model: virtio
+              name: default
+            rng: {}
+          features:
+            acpi: {}
+            smm:
+              enabled: true
+          firmware:
+            bootloader:
+              efi: {}
+          machine:
+            type: pc-q35-rhel9.8.0
+          memory:
+            guest: 2Gi
+          resources: {}
+        networks:
+        - name: default
+          pod: {}
+        terminationGracePeriodSeconds: 180
+        volumes:
+        - name: rootdisk
+          dataVolume:
+            name: ${NAME}
+        - cloudInitNoCloud:
+            userData: '#cloud-config
+
+              user: fedora
+
+              password: ${CLOUD_USER_PASSWORD}
+
+              chpasswd: { expire: False }'
+          name: cloudinitdisk
+parameters:
+- name: NAME
+  description: VM name
+  generate: expression
+  from: poc-web-golden-[a-z0-9]{6}
+- name: CLOUD_USER_PASSWORD
+  description: Password of the cloud-init user (fedora)
+  generate: expression
+  from: '[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}'
+- name: SSH_KEY_SECRET
+  description: Name of the SSH public key secret to inject into the VM
+  value: vm-ssh-key
+  required: true
+

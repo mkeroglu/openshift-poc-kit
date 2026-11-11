@@ -1,0 +1,7 @@
+# Apply after the operator CSV is Succeeded
+apiVersion: hco.kubevirt.io/v1beta1
+kind: HyperConverged
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: openshift-cnv
+spec: {}

@@ -1,0 +1,16 @@
+# Blank data disk to hotplug into the VM later — ODF RBD, RWX Block (live migration compatible)
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: fedora-data-disk
+  namespace: ocp-poc-virt
+spec:
+  source:
+    blank: {}
+  storage:
+    storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+    accessModes: [ReadWriteMany]
+    volumeMode: Block
+    resources:
+      requests:
+        storage: 10Gi

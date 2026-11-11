@@ -1,0 +1,62 @@
+# eastwest-demo.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poc-eastwest-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-a-allowed
+  namespace: poc-eastwest-demo
+  labels: { role: allowed-source }
+spec:
+  replicas: 1
+  selector: { matchLabels: { role: allowed-source } }
+  template:
+    metadata: { labels: { role: allowed-source } }
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-c-blocked
+  namespace: poc-eastwest-demo
+  labels: { role: blocked-source }
+spec:
+  replicas: 1
+  selector: { matchLabels: { role: blocked-source } }
+  template:
+    metadata: { labels: { role: blocked-source } }
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "sleep 3600"]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-b-protected
+  namespace: poc-eastwest-demo
+  labels: { role: protected-target }
+spec:
+  replicas: 1
+  selector: { matchLabels: { role: protected-target } }
+  template:
+    metadata: { labels: { role: protected-target } }
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /tmp/www && echo APP-B-OK > /tmp/www/index.html && httpd -f -p 8080 -h /tmp/www"]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: app-b, namespace: poc-eastwest-demo }
+spec: { selector: { role: protected-target }, ports: [{ port: 8080 }] }

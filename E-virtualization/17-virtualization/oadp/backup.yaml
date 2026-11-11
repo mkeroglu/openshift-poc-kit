@@ -1,0 +1,14 @@
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: poc-vm-backup-1
+  namespace: openshift-adp
+  annotations:
+    # Sets the class to use for this backup without labeling the shared VolumeSnapshotClass
+    velero.io/csi-volumesnapshot-class_openshift-storage.rbd.csi.ceph.com: ocs-storagecluster-rbdplugin-snapclass
+spec:
+  includedNamespaces:
+    - ocp-poc-virt-backup
+  snapshotVolumes: true          # PVCs are backed up with CSI snapshots
+  storageLocation: dpa-odf-1
+  ttl: 72h0m0s

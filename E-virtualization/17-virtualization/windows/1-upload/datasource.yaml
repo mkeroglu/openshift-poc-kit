@@ -1,0 +1,13 @@
+# Publishes the uploaded ready (sysprepped) Windows disk as a boot source.
+# For the cluster-wide ready-made "windows2k22-*" templates to use it, in production upload the PVC
+# directly as openshift-virtualization-os-images/win2k22 instead (see README method 1).
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataSource
+metadata:
+  name: win2k22-uploaded
+  namespace: ocp-poc-win
+spec:
+  source:
+    pvc:
+      name: win2k22-uploaded
+      namespace: ocp-poc-win

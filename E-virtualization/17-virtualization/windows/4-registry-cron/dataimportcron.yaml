@@ -1,0 +1,25 @@
+# Cron that regularly checks the Windows containerDisk in the corporate registry, imports a new version
+# automatically if there is one, and points the "win2k22-registry" DataSource at the latest image.
+# (RHEL/Fedora boot sources are kept up to date on the cluster with exactly this mechanism.)
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataImportCron
+metadata:
+  name: win2k22-image-cron
+  namespace: ocp-poc-win
+spec:
+  schedule: "0 3 * * 1"              # checks the registry for a new digest every Monday at 03:00
+  managedDataSource: win2k22-registry # creates/updates this DataSource
+  importsToKeep: 2                    # keeps the last 2 old images
+  garbageCollect: Outdated
+  template:
+    spec:
+      source:
+        registry:
+          url: docker://REPLACE_ME_REGISTRY/windows/win2k22:latest
+          certConfigMap: poc-registry-ca   # registry TLS CA; must exist in this namespace and in openshift-cnv (README)
+          # secretRef: registry-pull-secret   # for an authenticated registry (accessKeyId/secretKey)
+      storage:
+        storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+        resources:
+          requests:
+            storage: 60Gi

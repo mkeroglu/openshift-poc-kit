@@ -1,0 +1,27 @@
+# Which VMs move, with which maps, into which namespace
+apiVersion: forklift.konveyor.io/v1beta1
+kind: Plan
+metadata:
+  name: poc-ova-plan
+  namespace: openshift-mtv
+spec:
+  warm: false                         # cold migration (required for OVA; vSphere also supports warm)
+  targetNamespace: poc-mtv-demo
+  provider:
+    source:      {name: REPLACE_ME_SOURCE_PROVIDER, namespace: openshift-mtv}
+    destination: {name: host, namespace: openshift-mtv}
+  map:
+    network: {name: poc-ova-network-map, namespace: openshift-mtv}
+    storage: {name: poc-ova-storage-map, namespace: openshift-mtv}
+  vms:
+    - id: REPLACE_ME_SOURCE_VM_ID
+      targetName: REPLACE_ME_TARGET_VM_NAME   # required if the source name is invalid (spaces, uppercase)
+---
+# Runs the plan (each Migration is one run of the plan)
+apiVersion: forklift.konveyor.io/v1beta1
+kind: Migration
+metadata:
+  name: poc-ova-migration-1
+  namespace: openshift-mtv
+spec:
+  plan: {name: poc-ova-plan, namespace: openshift-mtv}

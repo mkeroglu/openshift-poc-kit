@@ -1,0 +1,80 @@
+# POC — RBAC scenario
+#   poc-developers : "edit" in dev, only "view" + deployment restart (custom role) in prod
+#   poc-viewers    : "view" in both namespaces (cannot see secrets)
+#   poc-admin      : admin of both namespaces (can grant access inside the namespace, cannot touch the cluster)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poc-rbac-dev
+  labels: {app.kubernetes.io/part-of: ocp-poc}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poc-rbac-prod
+  labels: {app.kubernetes.io/part-of: ocp-poc}
+---
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: poc-developers
+users: [poc-dev]
+---
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: poc-viewers
+users: [poc-viewer]
+---
+# dev: developers get full edit rights
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: developers-edit, namespace: poc-rbac-dev}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: edit}
+subjects: [{apiGroup: rbac.authorization.k8s.io, kind: Group, name: poc-developers}]
+---
+# prod: developers can only view...
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: developers-view, namespace: poc-rbac-prod}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: view}
+subjects: [{apiGroup: rbac.authorization.k8s.io, kind: Group, name: poc-developers}]
+---
+# ...and, with a custom role, only restart the deployment (oc rollout restart = patch)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: {name: deployment-restarter, namespace: poc-rbac-prod}
+rules:
+  - apiGroups: [apps]
+    resources: [deployments]
+    verbs: [get, list, watch, patch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: developers-restart, namespace: poc-rbac-prod}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: Role, name: deployment-restarter}
+subjects: [{apiGroup: rbac.authorization.k8s.io, kind: Group, name: poc-developers}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: viewers-view, namespace: poc-rbac-dev}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: view}
+subjects: [{apiGroup: rbac.authorization.k8s.io, kind: Group, name: poc-viewers}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: viewers-view, namespace: poc-rbac-prod}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: view}
+subjects: [{apiGroup: rbac.authorization.k8s.io, kind: Group, name: poc-viewers}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: ns-admin, namespace: poc-rbac-dev}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: admin}
+subjects: [{apiGroup: rbac.authorization.k8s.io, kind: User, name: poc-admin}]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: {name: ns-admin, namespace: poc-rbac-prod}
+roleRef: {apiGroup: rbac.authorization.k8s.io, kind: ClusterRole, name: admin}
+subjects: [{apiGroup: rbac.authorization.k8s.io, kind: User, name: poc-admin}]

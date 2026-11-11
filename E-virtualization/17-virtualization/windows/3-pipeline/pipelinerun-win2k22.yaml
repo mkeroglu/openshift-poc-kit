@@ -1,0 +1,38 @@
+# The Red Hat / KubeVirt "windows-efi-installer" pipeline: downloads the ISO from Microsoft, installs it
+# unattended with autounattend and leaves the result as the "win2k22" DataVolume + DataSource (golden image).
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: windows2k22-installer-run-
+  namespace: ocp-poc-win
+spec:
+  params:
+    - name: winImageDownloadURL
+      # Windows Server 2022 Evaluation (en-US, x64) — https://www.microsoft.com/en-us/evalcenter/evaluate-windows-server-2022
+      value: https://go.microsoft.com/fwlink/p/?LinkID=2195280&clcid=0x409&culture=en-us&country=US
+    - name: acceptEula
+      value: true            # means accepting the Microsoft EULA
+    - name: preferenceName
+      value: windows.2k22.virtio
+    - name: autounattendConfigMapName
+      value: windows2k22-autounattend
+    - name: baseDvName
+      value: win2k22
+    - name: isoDVName
+      value: win2k22-iso
+  pipelineRef:
+    resolver: hub            # the pipeline + tasks are pulled from ArtifactHub (kubevirt-tekton-pipelines catalog)
+    params:
+      - name: catalog
+        value: kubevirt-tekton-pipelines
+      - name: type
+        value: artifact
+      - name: kind
+        value: pipeline
+      - name: name
+        value: windows-efi-installer
+      - name: version
+        value: v0.26.0
+  # NOTE: the taskRunSpecs in the upstream example (runAsUser/fsGroup: 107) are rejected by the SCC on OpenShift
+  # (PodAdmissionFailed: "107 is not an allowed group"). Do NOT use this block on OpenShift.
+  timeout: 3h0m0s

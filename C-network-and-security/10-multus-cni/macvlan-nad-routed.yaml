@@ -1,0 +1,28 @@
+# macvlan-nad-routed.yaml
+# NAD with a route in the IPAM so traffic from other subnets (behind a router) is answered over net1
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  name: macvlan-lan-routed
+  namespace: REPLACE_ME_NAMESPACE
+spec:
+  config: |
+    {
+      "cniVersion": "0.3.1",
+      "type": "macvlan",
+      "master": "br-ex",
+      "mode": "bridge",
+      "ipam": {
+        "type": "whereabouts",
+        "range": "REPLACE_ME_CIDR",
+        "range_start": "REPLACE_ME_IP_START",
+        "range_end": "REPLACE_ME_IP_END",
+        "gateway": "REPLACE_ME_GATEWAY",
+        "routes": [
+          {
+            "dst": "REPLACE_ME_REMOTE_CIDR",
+            "gw": "REPLACE_ME_GATEWAY"
+          }
+        ]
+      }
+    }

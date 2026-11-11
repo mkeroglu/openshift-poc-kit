@@ -1,0 +1,13 @@
+# root-pod.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: root-test
+  namespace: poc-psa-scc-test
+spec:
+  containers:
+    - name: test
+      image: busybox:1.36
+      command: ["id"]
+      securityContext:
+        runAsUser: 0

@@ -1,0 +1,16 @@
+# backup-with-volumes.yaml
+# Backup that backs up PVCs with CSI snapshots (the DPA needs the "csi" plugin)
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: poc-oadp-demo-backup
+  namespace: openshift-adp
+  annotations:
+    # Picks the VolumeSnapshotClass per backup instead of labeling it with "velero.io/csi-volumesnapshot-class=true"
+    velero.io/csi-volumesnapshot-class_openshift-storage.rbd.csi.ceph.com: ocs-storagecluster-rbdplugin-snapclass
+spec:
+  includedNamespaces:
+    - poc-oadp-demo
+  snapshotVolumes: true
+  storageLocation: dpa-odf-1
+  ttl: 720h0m0s

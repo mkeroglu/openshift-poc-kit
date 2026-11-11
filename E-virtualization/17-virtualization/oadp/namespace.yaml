@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ocp-poc-virt-backup
+  labels:
+    app.kubernetes.io/part-of: ocp-poc
+  annotations:
+    openshift.io/display-name: "OCP POC - VM Backup/Restore"

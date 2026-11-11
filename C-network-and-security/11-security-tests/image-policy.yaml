@@ -1,0 +1,16 @@
+# Namespace-scoped signature requirement: images in scope are not pulled by CRI-O unless signed with the given public key.
+apiVersion: config.openshift.io/v1
+kind: ImagePolicy
+metadata:
+  name: require-signed-images
+  namespace: poc-image-signing
+spec:
+  scopes:
+    - image-registry.openshift-image-registry.svc:5000/poc-image-signing   # only this namespace's images
+  policy:
+    rootOfTrust:
+      policyType: PublicKey
+      publicKey:
+        keyData: REPLACE_ME_COSIGN_PUB_BASE64     # base64 -w0 cosign.pub
+    signedIdentity:
+      matchPolicy: MatchRepository

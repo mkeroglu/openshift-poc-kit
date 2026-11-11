@@ -1,0 +1,7 @@
+# Packages the Windows golden image as a containerDisk (disk under /disk/, owned by qemu UID 107).
+# IMPORTANT: the disk must be qcow2 (preferably compressed with "qemu-img convert -c") or raw.
+#         DON'T use .gz/.xz — CDI does not unpack archives from a registry source; it writes the file to disk as-is (live test).
+# Usage: podman build -t <registry>/windows/win2k22:<date> --build-arg DISK=win2k22-golden.qcow2 .
+FROM scratch
+ARG DISK=disk.qcow2
+ADD --chown=107:107 ${DISK} /disk/

@@ -1,0 +1,68 @@
+# Produce a "golden image" (boot source) from a VM disk installed from ISO
+# 1) Clone the installed disk  2) Publish it as a boot source with a DataSource
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: alpine-golden
+  namespace: ocp-poc-virt
+spec:
+  source:
+    pvc:
+      name: alpine-from-iso-rootdisk
+      namespace: ocp-poc-virt
+  storage:
+    storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+    accessModes: [ReadWriteMany]
+    volumeMode: Block
+    resources:
+      requests:
+        storage: 5Gi
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataSource
+metadata:
+  name: alpine-golden
+  namespace: ocp-poc-virt
+  labels:
+    instancetype.kubevirt.io/default-instancetype: u1.small
+    instancetype.kubevirt.io/default-preference: alpine
+spec:
+  source:
+    pvc:
+      name: alpine-golden
+      namespace: ocp-poc-virt
+---
+# New VM from the golden image
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: alpine-from-golden
+  namespace: ocp-poc-virt
+spec:
+  runStrategy: Always
+  instancetype:
+    kind: VirtualMachineClusterInstancetype
+    name: u1.small
+  preference:
+    kind: VirtualMachineClusterPreference
+    name: alpine
+  dataVolumeTemplates:
+    - metadata:
+        name: alpine-from-golden-rootdisk
+      spec:
+        sourceRef:
+          kind: DataSource
+          name: alpine-golden
+          namespace: ocp-poc-virt
+        storage:
+          resources:
+            requests:
+              storage: 5Gi
+  template:
+    spec:
+      domain:
+        devices: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: alpine-from-golden-rootdisk

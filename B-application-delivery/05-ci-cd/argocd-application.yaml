@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitops-demo-dev
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mkeroglu/openshift-poc-kit.git   # or your own fork
+    targetRevision: main
+    path: B-application-delivery/05-ci-cd/app/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ocp-poc-gitops-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

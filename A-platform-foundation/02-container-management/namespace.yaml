@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ocp-poc
+  labels:
+    app.kubernetes.io/part-of: ocp-poc
+    environment: poc
+  annotations:
+    openshift.io/display-name: "OCP POC"
+    openshift.io/description: "Namespace/project for the OpenShift POC"

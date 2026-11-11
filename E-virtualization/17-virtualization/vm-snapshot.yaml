@@ -1,0 +1,10 @@
+apiVersion: snapshot.kubevirt.io/v1beta1
+kind: VirtualMachineSnapshot
+metadata:
+  name: fedora-snap-1
+  namespace: ocp-poc-virt
+spec:
+  source:
+    apiGroup: kubevirt.io
+    kind: VirtualMachine
+    name: fedora-from-template

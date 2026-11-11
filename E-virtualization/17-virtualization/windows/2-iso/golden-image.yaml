@@ -1,0 +1,29 @@
+# Golden image (boot source) from the disk of the VM installed from ISO and shut down by sysprep
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: win2k22-from-iso
+  namespace: ocp-poc-win
+spec:
+  source:
+    pvc:
+      name: win2k22-installer-rootdisk
+      namespace: ocp-poc-win
+  storage:
+    storageClassName: ocs-storagecluster-ceph-rbd-virtualization
+    accessModes: [ReadWriteMany]
+    volumeMode: Block
+    resources:
+      requests:
+        storage: 60Gi
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataSource
+metadata:
+  name: win2k22-from-iso
+  namespace: ocp-poc-win
+spec:
+  source:
+    pvc:
+      name: win2k22-from-iso
+      namespace: ocp-poc-win

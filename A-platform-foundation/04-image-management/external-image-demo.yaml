@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-image-demo
+  namespace: ocp-poc
+  labels:
+    app: external-image-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: external-image-demo
+  template:
+    metadata:
+      labels:
+        app: external-image-demo
+    spec:
+      imagePullSecrets:
+        - name: external-registry-cred
+      containers:
+        - name: app
+          # Example/placeholder path: replace it with your own private image path.
+          image: docker.io/ocppoc/private-demo:latest
+          command: ["sleep", "infinity"]
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi

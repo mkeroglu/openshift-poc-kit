@@ -1,0 +1,83 @@
+# tiers.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: poc-microseg-demo
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: poc-microseg-demo
+  labels:
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { tier: frontend }
+  template:
+    metadata:
+      labels: { tier: frontend }
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /tmp/www && echo FRONTEND-OK > /tmp/www/index.html && httpd -f -p 8080 -h /tmp/www"]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: poc-microseg-demo
+  labels:
+    tier: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { tier: backend }
+  template:
+    metadata:
+      labels: { tier: backend }
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /tmp/www && echo BACKEND-OK > /tmp/www/index.html && httpd -f -p 8080 -h /tmp/www"]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: poc-microseg-demo
+  labels:
+    tier: database
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { tier: database }
+  template:
+    metadata:
+      labels: { tier: database }
+    spec:
+      containers:
+        - name: web
+          image: busybox:1.36
+          command: ["sh", "-c", "mkdir -p /tmp/www && echo DATABASE-OK > /tmp/www/index.html && httpd -f -p 8080 -h /tmp/www"]
+          ports: [{ containerPort: 8080 }]
+---
+apiVersion: v1
+kind: Service
+metadata: { name: frontend, namespace: poc-microseg-demo }
+spec: { selector: { tier: frontend }, ports: [{ port: 8080 }] }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: backend, namespace: poc-microseg-demo }
+spec: { selector: { tier: backend }, ports: [{ port: 8080 }] }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: database, namespace: poc-microseg-demo }
+spec: { selector: { tier: database }, ports: [{ port: 8080 }] }

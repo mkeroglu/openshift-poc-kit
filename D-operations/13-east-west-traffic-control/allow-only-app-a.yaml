@@ -1,0 +1,17 @@
+# allow-only-app-a.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-only-app-a
+  namespace: poc-eastwest-demo
+spec:
+  podSelector:
+    matchLabels: { role: protected-target }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels: { role: allowed-source }
+      ports:
+        - protocol: TCP
+          port: 8080

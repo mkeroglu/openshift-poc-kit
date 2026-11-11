@@ -1,0 +1,11 @@
+{
+  "name": "ocp-poc Internal Registry",
+  "type": "docker",
+  "categories": ["REGISTRY"],
+  "docker": {
+    "endpoint": "image-registry.openshift-image-registry.svc:5000",
+    "username": "REPLACE_ME_USERNAME",
+    "password": "REPLACE_ME_TOKEN",
+    "insecure": true
+  }
+}
